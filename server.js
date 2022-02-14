@@ -94,6 +94,8 @@ setUp();
 const express = require('express');
 const app = express();
 app.use(express.urlencoded({extended:false}))
+const methodOverride = require('method-override');
+app.use(methodOverride('_method'))
 app.get('/', (req, res) => res.redirect('/properties')); // here i am redirecting the 'home page' to be where properties are going to be listed
 
 
@@ -107,8 +109,12 @@ app.get('/properties', async (req,res,next) => { // here i am setting up the env
                     <div>`}).join('');
         res.send(`
         <html>
+        <head>
+          <title>Classic Monopoly Properties </title>
+        <head>
         <body>
           <h1> Classic Monopoly Properties </h1>
+          <h2> Add Your Own Property!</h2>
           <form method="POST">
             <input name= "name" placeholder = "Your Property's Name"/>
             <select name ="colorId">
@@ -120,7 +126,7 @@ app.get('/properties', async (req,res,next) => { // here i am setting up the env
             }
             </select>
             <input name= "price" placeholder = "Your Property's Price"/>
-            <button>Add Property!</button>
+            <button>Add Property</button>
         </form>
           ${propNames}
          
@@ -139,9 +145,13 @@ app.get('/colors/:id', async(req, res, next) => {
             <div>
     
             ${property.name} $${property.price}
+            <form method="POST" action="/properties/${property.id}?_method=delete"><button>X</button></form> 
             </div>`
         }).join('');
         res.send(`<html>
+            <head>
+              <title>Property Colors</title>
+            </head>
             <body>
               <h1> Property Colors </h1>
               <h2> ${colors.name} </h2>
@@ -161,6 +171,16 @@ app.get('/colors/:id', async(req, res, next) => {
 app.post('/properties', async (req, res, next) => {
     try {
         const property = await Properties.create(req.body);
+        res.redirect(`/colors/${property.colorId}`)
+    } catch (error) {
+        next(error)
+    }
+})
+
+app.delete('/properties/:id', async (req, res, next) => {
+    try {
+        const property = await Properties.findByPk(req.params.id);
+       await property.destroy();
         res.redirect(`/colors/${property.colorId}`)
     } catch (error) {
         next(error)
